@@ -1,0 +1,1 @@
+alert tcp $HOME_NET any -> $EXT_NET any (\ sid 68273; msg: "P2P Detected"; \ p2p: "Protocoll = bt-utp";\ threshold: type limit, track by_src, seconds 60, count 1;)
