@@ -108,7 +108,7 @@
 #include "detect-csum.h"
 #include "detect-stream_size.h"
 #include "detect-engine-sigorder.h"
-#include "detect-dummy.h"
+#include "detect-p2p.h"
 #include "detect-ttl.h"
 #include "detect-fast-pattern.h"
 #include "detect-itype.h"
@@ -4740,7 +4740,7 @@ void SigTableSetup(void) {
     DetectMarkRegister();
     DetectCsumRegister();
     DetectStreamSizeRegister();
-    DetectDummyRegister();
+    DetectP2PRegister();
     DetectTtlRegister();
     DetectTosRegister();
     DetectFastPatternRegister();

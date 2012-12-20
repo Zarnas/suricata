@@ -1097,7 +1097,7 @@ enum {
     DETECT_LUAJIT,
     DETECT_IPREP,
 
-    DETECT_DUMMY,
+    DETECT_P2P,
 
     /* make sure this stays last */
     DETECT_TBLSIZE,
