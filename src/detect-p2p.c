@@ -40,6 +40,13 @@ int DetectP2PMatch (ThreadVars *, DetectEngineThreadCtx *, Packet *, Signature *
 static int DetectP2PSetup (DetectEngineCtx *, Signature *, char *);
 void DetectP2PFree (void *);
 void DetectP2PRegisterTests (void);
+uint16_t i=0;
+uint32_t ports[100];
+uint16_t pg=0;
+uint16_t ph=0;
+uint16_t pl=0;
+uint16_t pperc=50;
+uint16_t plimit=1023;
 
 /**
  * \brief Registration function for `dummy` keyword
@@ -97,7 +104,27 @@ int DetectP2PMatch (ThreadVars *t, DetectEngineThreadCtx *det_ctx, Packet *p, Si
         bzero(ddata, sizeof(DetectP2PData));
         h->p2p = ddata;
     }
+
     
+    if (PKT_IS_TCP(p)){
+       // if(p->tcph->th_dport != NULL){
+          //  ports[i] = p->tcph->th_dport;
+         pg++;
+         if(p->dp > plimit){
+            ph++;
+            }
+            if(pg>3){
+                if(((100*ph)/pg)>pperc){
+                printf("\n\nKritischer Wert erreicht\n\n");
+                }
+                }
+        /*        
+            ports[i] = p->dp;
+            printf("\n\n%d\n\n", ports[i]);
+            i++;
+            */
+//}
+}
     (ddata->cnt_packets)++;
     //printf("host found, packets now %d\n", ddata->cnt_packets);
     ret = (ddata->cnt_packets > dsig->max_numpackets);

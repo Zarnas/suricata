@@ -292,7 +292,7 @@ af-packet:
 
 # You can specify a threshold config file by setting "threshold-file"
 # to the path of the threshold config file:
-# threshold-file: /etc/suricata/threshold.config
+threshold-file: /root/suricata/threshold.config
 
 # The detection engine builds internal groups of signatures. The engine
 # allow us to specify the profile to use for them, to manage memory on an
@@ -725,18 +725,12 @@ ipfw:
 
 # Set the default rule path here to search for the files.
 # if not set, it will look at the current working dir
-default-rule-path: /opt/suricata-git-master/etc/suricata/rules
+default-rule-path: /root/suricata/rules
 rule-files:
  - detect-p2p.rules
- - rbn.rules
- - tor.rules
- - decoder-events.rules # available in suricata sources under rules dir
- - stream-events.rules  # available in suricata sources under rules dir
- - http-events.rules    # available in suricata sources under rules dir
- - smtp-events.rules    # available in suricata sources under rules dir
 
-classification-file: /opt/suricata-git-master/etc/suricata/classification.config
-reference-config-file: /opt/suricata-git-master/etc/suricata/reference.config
+classification-file: /root/suricata/classification.config
+reference-config-file: /root/suricata/reference.config
 
 # Holds variables that would be used by the engine.
 vars:
