@@ -18,9 +18,9 @@
 /**
  * \file
  *
- * \author Christian Rossow <christian.rossow [at] gmail.com>
+ * \authors Michael Neuschulte, Markus Alberts
  *
- * Implements the dummy keyword
+ * Implements the p2p keyword
  */
 
 #include "suricata-common.h"
@@ -40,16 +40,14 @@ int DetectP2PMatch (ThreadVars *, DetectEngineThreadCtx *, Packet *, Signature *
 static int DetectP2PSetup (DetectEngineCtx *, Signature *, char *);
 void DetectP2PFree (void *);
 void DetectP2PRegisterTests (void);
-uint16_t i=0;
-uint32_t ports[100];
-uint16_t pg=0;
-uint16_t ph=0;
-uint16_t pl=0;
-uint16_t pperc=50;
-uint16_t plimit=1023;
+uint16_t pg=0; //Sum of ports
+uint16_t ph=0; //Sum of highports
+uint32_t perc_limit=0; //Percent limit
+uint32_t port_limit=0; //Highport definition
+uint32_t sum_hport_limit=0; //Highport limit
 
 /**
- * \brief Registration function for `dummy` keyword
+ * \brief Registration function for `p2p` keyword
  */
 
 void DetectP2PRegister(void) {
@@ -61,12 +59,12 @@ void DetectP2PRegister(void) {
 }
 
 /**
- * \brief This function is used to match packets via the dummy rule
+ * \brief This function is used to match packets via the p2p rule
  *
  * \param t pointer to thread vars
  * \param det_ctx pointer to the pattern matcher thread
  * \param p pointer to the current packet
- * \param m pointer to the sigmatch that we will cast into DetectDummyData
+ * \param m pointer to the sigmatch that we will cast into DetectP2PData
  *
  * \retval 0 no match
  * \retval 1 match
@@ -85,7 +83,7 @@ int DetectP2PMatch (ThreadVars *t, DetectEngineThreadCtx *det_ctx, Packet *p, Si
         return 0;
     }
 
-    /* TODO: Inspect the packet contents here.
+    /* Inspect the packet contents here.
      * Suricata defines a `Packet` structure in decode.h which already defines 
      * many useful elements -- have a look! */
 
@@ -99,46 +97,64 @@ int DetectP2PMatch (ThreadVars *t, DetectEngineThreadCtx *det_ctx, Packet *p, Si
 
     ddata = (DetectP2PData *) h->p2p;
     if (!ddata) {
-        /* initialize fresh dummydata */
+        /* initialize fresh p2pdata */
         ddata = SCMalloc(sizeof(DetectP2PData));
         bzero(ddata, sizeof(DetectP2PData));
         h->p2p = ddata;
     }
-
-    
+/*    Relics:
+  //  printf("\n\n%i\n\n", sum_hport_limit);
     if (PKT_IS_TCP(p)){
        // if(p->tcph->th_dport != NULL){
           //  ports[i] = p->tcph->th_dport;
          pg++;
-         if(p->dp > plimit){
+         if(p->dp > port_limit){
             ph++;
             }
             if(pg>3){
-                if(((100*ph)/pg)>pperc){
-                printf("\n\nKritischer Wert erreicht\n\n");
+                if((((100*ph)/pg)>perc_limit) || (ph>sum_hport_limit)){
+        //        printf("\n\nKritischer Wert erreicht\n\n");
+                ret=1;
                 }
                 }
-        /*        
+                
             ports[i] = p->dp;
             printf("\n\n%d\n\n", ports[i]);
             i++;
-            */
-//}
-}
+            
+//} */
+    //Calculates the % share of high-port connections.
+    //If the percentage share, or the total numer of high-port
+    //connections are too high, an alarm will be thrown
     (ddata->cnt_packets)++;
-    //printf("host found, packets now %d\n", ddata->cnt_packets);
+ // printf("\n\nhost found, packets now %d\n\n", ddata->cnt_packets);
     ret = (ddata->cnt_packets > dsig->max_numpackets);
-    
+    if(ddata->cnt_packets == 1){
+    pg=0;
+    ph=0;
+    }
+    if(PKT_IS_TCP(p)){
+    pg++;
+        if(p->dp>port_limit){
+        ph++;
+        }
+        if(pg>3){
+            if((((100*ph)/pg)>perc_limit)||(ph>sum_hport_limit)){
+    //            printf("High ports fly high: %d", ph);
+                ret=1;
+                }
+                }
+
     HostRelease(h);
     return ret;
 }
-
+}
 /**
- * \brief this function is used to setup the dummy environment
+ * \brief this function is used to setup the p2p environment
  *
  * \param de_ctx pointer to the Detection Engine Context
  * \param s pointer to the Current Signature
- * \param dummystr pointer to the user provided dummy options
+ * \param p2pstr pointer to the user provided p2p options
  *
  * \retval 0 on Success
  * \retval -1 on Failure
@@ -147,6 +163,9 @@ static int DetectP2PSetup (DetectEngineCtx *de_ctx, Signature *s, char *p2pstr) 
 
     SigMatch *sm = NULL;
     DetectP2PSig *dsig = NULL;
+    char* tok;
+    char* save;
+    uint32_t tmp;
     
     dsig = SCMalloc(sizeof(DetectP2PSig));
     if (dsig == NULL) { goto error; }
@@ -154,8 +173,26 @@ static int DetectP2PSetup (DetectEngineCtx *de_ctx, Signature *s, char *p2pstr) 
     sm = SigMatchAlloc();
     if (sm == NULL) { goto error; }
 
-    dsig->max_numpackets = atoi(p2pstr);
+   // dsig->max_numpackets = atoi(p2pstr);
 
+    tok = strtok(p2pstr,": ,");
+    while (tok != NULL){
+        save = tok;
+        tok = strtok(NULL, ": ,");
+        if((tmp = atoi(tok)) == 0){
+        return -1;
+        }
+
+        if(strcmp(save, "perc_limit") == 0){
+            if(tmp>=0 && tmp<=100){
+            perc_limit=tmp;}}
+            else if(strcmp(save, "port_limit") == 0){
+                if(tmp>=1 && tmp<=65535){
+                port_limit=tmp;}}
+            else if (strcmp(save, "sum_hport_limit") == 0){
+                sum_hport_limit=tmp;}
+            tok=strtok(NULL, ": ,");
+}
     sm->type = DETECT_P2P;
     sm->ctx = (void *) dsig;
 

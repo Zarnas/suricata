@@ -18,7 +18,7 @@
 /**
  * \file
  *
- * \author Christian Rossow <christian.rossow [at] gmail.com>
+ * \authors Michael Neuschulte, Markus Alberts
  */
 
 #ifndef _DETECT_P2P_H

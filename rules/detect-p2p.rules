@@ -1,1 +1,1 @@
-alert tcp any any -> any any (msg: "P2P Detected";sid:99999; rev:1; p2p: "8000, 60";)
+alert tcp any any -> any any (msg: "P2P Detected";sid:99999; rev:1; p2p: perc_limit:50, port_limit:1023, sum_hport_limit:5;)
